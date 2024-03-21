@@ -117,27 +117,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Apply the "Pop" interaction to the marker element
         this.classList.add("pop-interaction");
       });
-
-      // Add popup to each marker
-      var popup = new mapboxgl.Popup({
-          offset: 25
-        })
-        .setHTML("<h3>Walk here</h3><p>Click for walking directions</p>");
-
-      marker.setPopup(popup);
-
-      // Handle marker click event
-      marker.getElement().addEventListener("click", function () {
-        var destination = {
-          latitude: latitude,
-          longitude: longitude
-        };
-        var origin = {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude
-        };
-
-        getWalkingDirections(origin, destination);
       });
     }
   });
@@ -289,69 +268,5 @@ showMapButtons.forEach(function (button) {
       }
     });
   }
-
-  // Function to get walking directions
-  function getWalkingDirections(origin, destination) {
-    var url =
-      "https://api.mapbox.com/directions/v5/mapbox/walking/" +
-      origin.longitude +
-      "," +
-      origin.latitude +
-      ";" +
-      destination.longitude +
-      "," +
-      destination.latitude +
-      "?geometries=geojson&access_token=" +
-      mapboxgl.accessToken;
-
-    fetch(url)
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (data) {
-        var route = data.routes[0];
-        if (route) {
-          var routeLine = route.geometry.coordinates;
-          var distance = route.distance;
-          var duration = route.duration;
-
-          // Draw the route on the map
-          map.addLayer({
-            id: "route",
-            type: "line",
-            source: {
-              type: "geojson",
-              data: {
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "LineString",
-                  coordinates: routeLine,
-                },
-              },
-            },
-            layout: {
-              "line-join": "round",
-              "line-cap": "round",
-            },
-            paint: {
-              "line-color": "#3887be",
-              "line-width": 5,
-              "line-opacity": 0.75,
-            },
-          });
-
-          // Fit the map to the route
-          var bounds = routeLine.reduce(function (bounds, coord) {
-            return bounds.extend(coord);
-          }, new mapboxgl.LngLatBounds(routeLine[0], routeLine[0]));
-          map.fitBounds(bounds, {
-            padding: 20,
-          });
-        }
-      })
-      .catch(function (error) {
-        console.error("Error fetching walking directions:", error);
-      });
   }
 });

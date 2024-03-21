@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", function () {
   var map = new mapboxgl.Map({
     container: "turmap",
     //style: "mapbox://styles/dbarnesen/ckk3vfvbi4t1v17p82fuy61pt",
-    style: "mapbox://styles/dbarnesen/clu1rd21q002x01pi0udm9dds",
+    style: "mapbox://styles/dbarnesen/clu1rz6ke00qa01qw9c1k04b8",
+    //style: "mapbox://styles/dbarnesen/clu1rd21q002x01pi0udm9dds",
     center: [8.2961, 59.91639], // Default center (Torvet, Risør)
     zoom: 5.5,
     pitch: 54,

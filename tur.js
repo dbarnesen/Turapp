@@ -49,13 +49,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
  
 
-  // Fly to the default center with zoom level 14
-  map.flyTo({
-    center: [9.234312096370514, 58.72082404465131], // Default center (Torvet, Risør)
-    zoom: 15,
-    essential: true, // Set essential to true for a smooth animation
-  });
-
   // Add event listener when map is fully loaded
   map.on("load", function () {
     // Add Geolocate Control to the map
@@ -67,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var markers = [];
   var selectedCollectionItem = null;
 
-collectionItems.forEach(function (item, index) {
+  collectionItems.forEach(function (item, index) {
     var latitude = parseFloat(item.getAttribute("data-lat"));
     var longitude = parseFloat(item.getAttribute("data-lng"));
 
@@ -76,17 +69,17 @@ collectionItems.forEach(function (item, index) {
 
     // Check if latitude, longitude, and kategori are valid
     if (!isNaN(latitude) && !isNaN(longitude) && kategori) {
-        var marker = new mapboxgl.Marker({
-            element: createCustomMarkerElement(unselectedMarkerIcon), // Create custom marker element
-            anchor: "bottom", // Anchor marker at the bottom
+      var marker = new mapboxgl.Marker({
+          element: createCustomMarkerElement(unselectedMarkerIcon), // Create custom marker element
+          anchor: "bottom", // Anchor marker at the bottom
         })
         .setLngLat([longitude, latitude])
         .addTo(map);
 
-        // Add data-kategori attribute to the marker element
-        marker.getElement().setAttribute("data-kategori", kategori);
+      // Add data-kategori attribute to the marker element
+      marker.getElement().setAttribute("data-kategori", kategori);
 
-        markers.push(marker);
+      markers.push(marker);
 
       // Add click event listener to each collection list item
       item.addEventListener("click", function () {
@@ -108,8 +101,7 @@ collectionItems.forEach(function (item, index) {
       });
 
       // Add click event listener to each marker
-      marker.getElement().addEventListener
-      ("click", function () {
+      marker.getElement().addEventListener("click", function () {
         // Scroll to the selected collection item
         scrollToSelectedItem(item);
 
@@ -125,6 +117,28 @@ collectionItems.forEach(function (item, index) {
         // Apply the "Pop" interaction to the marker element
         this.classList.add("pop-interaction");
       });
+
+      // Add popup to each marker
+      var popup = new mapboxgl.Popup({
+          offset: 25
+        })
+        .setHTML("<h3>Walk here</h3><p>Click for walking directions</p>");
+
+      marker.setPopup(popup);
+
+      // Handle marker click event
+      marker.getElement().addEventListener("click", function () {
+        var destination = {
+          latitude: latitude,
+          longitude: longitude
+        };
+        var origin = {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        };
+
+        getWalkingDirections(origin, destination);
+      });
     }
   });
 
@@ -137,8 +151,8 @@ collectionItems.forEach(function (item, index) {
     markerElement.style.height = "50px"; // Adjust marker height
     markerElement.style.backgroundSize = "cover"; // Ensure marker image covers the marker element
 
-// Log the created marker element to the console
-console.log("Created marker element:", markerElement);
+    // Log the created marker element to the console
+    console.log("Created marker element:", markerElement);
 
     return markerElement;
   }
@@ -151,7 +165,6 @@ console.log("Created marker element:", markerElement);
       marker.getElement().style.backgroundImage = "url(" + iconUrl + ")";
     });
   }
-
   // Function to scroll the collection list container to show the selected item
   function scrollToSelectedItem(item) {
     var container = document.getElementById("map-slides");
@@ -240,15 +253,80 @@ console.log("Created marker element:", markerElement);
 
   function filterMarkers(filterValue) {
     markers.forEach(function (marker) {
-        var kategori = marker.getElement().getAttribute("data-kategori");
+      var kategori = marker.getElement().getAttribute("data-kategori");
 
-        if (kategori !== filterValue) {
-            console.log("Removing marker");
-            marker.remove(); // Remove markers not matching the filter value
-        } else {
-            console.log("Adding marker");
-            marker.addTo(map); // Add markers matching the filter value
-        }
+      if (kategori !== filterValue) {
+        console.log("Removing marker");
+        marker.remove(); // Remove markers not matching the filter value
+      } else {
+        console.log("Adding marker");
+        marker.addTo(map); // Add markers matching the filter value
+      }
     });
-}
+  }
+
+  // Function to get walking directions
+  function getWalkingDirections(origin, destination) {
+    var url =
+      "https://api.mapbox.com/directions/v5/mapbox/walking/" +
+      origin.longitude +
+      "," +
+      origin.latitude +
+      ";" +
+      destination.longitude +
+      "," +
+      destination.latitude +
+      "?geometries=geojson&access_token=" +
+      mapboxgl.accessToken;
+
+    fetch(url)
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (data) {
+        var route = data.routes[0];
+        if (route) {
+          var routeLine = route.geometry.coordinates;
+          var distance = route.distance;
+          var duration = route.duration;
+
+          // Draw the route on the map
+          map.addLayer({
+            id: "route",
+            type: "line",
+            source: {
+              type: "geojson",
+              data: {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "LineString",
+                  coordinates: routeLine,
+                },
+              },
+            },
+            layout: {
+              "line-join": "round",
+              "line-cap": "round",
+            },
+            paint: {
+              "line-color": "#3887be",
+              "line-width": 5,
+              "line-opacity": 0.75,
+            },
+          });
+
+          // Fit the map to the route
+          var bounds = routeLine.reduce(function (bounds, coord) {
+            return bounds.extend(coord);
+          }, new mapboxgl.LngLatBounds(routeLine[0], routeLine[0]));
+          map.fitBounds(bounds, {
+            padding: 20,
+          });
+        }
+      })
+      .catch(function (error) {
+        console.error("Error fetching walking directions:", error);
+      });
+  }
 });

@@ -138,223 +138,92 @@ document.addEventListener("DOMContentLoaded", function () {
         // Apply the "Pop" interaction to the marker element
         this.classList.add("pop-interaction");
       });
+// Function to create custom marker element
+function createCustomMarkerElement(iconUrl) {
+var markerElement = document.createElement("div");
+markerElement.className = "custom-marker";
+markerElement.style.backgroundImage = "url(" + iconUrl + ")";
+markerElement.style.width = "40px"; // Adjust marker width
+markerElement.style.height = "50px"; // Adjust marker height
+markerElement.style.backgroundSize = "cover"; // Ensure marker image covers the marker element
 
-      // Add popup to each marker
-      var popup = new mapboxgl.Popup({
-          offset: 25
-        })
-        .setHTML("<h3>Walk here</h3><p>Click for walking directions</p>");
+      // Log the created marker element to the console
+console.log("Created marker element:", markerElement);
 
-      marker.setPopup(popup);
-// Add event listener to the popup for walking directions
-        popup.on('open', function () {
-            var origin = geolocate._lastKnownPosition;
-            var destination = { longitude: longitude, latitude: latitude };
-            var walkingDirectionsButton = document.querySelector('.walking-directions-button');
-            walkingDirectionsButton.addEventListener('click', function () {
-                getWalkingDirections(origin, destination);
-            });
-        });
-      // Handle marker click event
-      marker.getElement().addEventListener("click", function () {
-        var destination = {
-          latitude: latitude,
-          longitude: longitude
-        };
-        var origin = {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude
-        };
+return markerElement;
+}
 
-      });
-    }
+// Function to toggle marker icon
+function toggleMarkerIcon(selectedIndex) {
+markers.forEach(function (marker, index) {
+var iconUrl =
+index === selectedIndex ? selectedMarkerIcon : unselectedMarkerIcon;
+marker.getElement().style.backgroundImage = "url(" + iconUrl + ")";
+});
+}
+
+// Function to scroll the collection list container to show the selected item
+function scrollToSelectedItem(item) {
+var container = document.getElementById("map-slides");
+item.scrollIntoView({
+behavior: "smooth",
+block: "nearest",
+inline: "center",
+});
+}
+
+// Function to apply selection styling to the collection item
+function applySelectionStyling(item) {
+if (selectedCollectionItem) {
+selectedCollectionItem.style.borderColor = ""; // Revert border color of previously selected item
+selectedCollectionItem.style.backgroundColor = ""; // Revert border color of previously selected item
+}
+item.style.borderColor = "#cc9752"; // Apply border color to the selected item
+item.style.backgroundColor = "#cc9752"; // Apply background color to the selected item
+selectedCollectionItem = item; // Update selected collection item
+}
+
+// Function to get walking directions using Mapbox Directions API
+function getWalkingDirections(origin, destination) {
+var url =
+"https://api.mapbox.com/directions/v5/mapbox/walking/" +
+origin.longitude +
+"," +
+origin.latitude +
+";" +
+destination.longitude +
+"," +
+destination.latitude +
+"?steps=true&geometries=geojson&access_token=" +
+mapboxgl.accessToken;
+
+fetch(url)
+  .then(function (response) {
+    return response.json();
+  })
+  .then(function (data) {
+    var route = data.routes[0];
+    var distance = route.distance.toFixed(1);
+    var duration = Math.ceil(route.duration / 60);
+
+    var instructions = route.legs[0].steps.map(function (step) {
+      return step.maneuver.instruction;
+    });
+
+    var directions = "<h2>Walking Directions</h2>";
+    directions +=
+      "<p>Distance: " + distance + " meters</p>" +
+      "<p>Duration: " + duration + " minutes</p>";
+
+    instructions.forEach(function (instruction) {
+      directions += "<p>" + instruction + "</p>";
+    });
+
+    // Display walking directions in a modal or on the page
+    alert(directions);
+  })
+  .catch(function (error) {
+    console.log("Error fetching walking directions:", error);
   });
-
-  // Function to create custom marker element
-  function createCustomMarkerElement(iconUrl) {
-    var markerElement = document.createElement("div");
-    markerElement.className = "custom-marker";
-    markerElement.style.backgroundImage = "url(" + iconUrl + ")";
-    markerElement.style.width = "40px"; // Adjust marker width
-    markerElement.style.height = "50px"; // Adjust marker height
-    markerElement.style.backgroundSize = "cover"; // Ensure marker image covers the marker element
-
-    // Log the created marker element to the console
-    console.log("Created marker element:", markerElement);
-
-    return markerElement;
-  }
-
-  // Function to toggle marker icon
-  function toggleMarkerIcon(selectedIndex) {
-    markers.forEach(function (marker, index) {
-      var iconUrl =
-        index === selectedIndex ? selectedMarkerIcon : unselectedMarkerIcon;
-      marker.getElement().style.backgroundImage = "url(" + iconUrl + ")";
-    });
-  }
-  // Function to scroll the collection list container to show the selected item
-  function scrollToSelectedItem(item) {
-    var container = document.getElementById("map-slides");
-    item.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-  }
-
-  // Function to apply selection styling to the collection item
-  function applySelectionStyling(item) {
-    if (selectedCollectionItem) {
-      selectedCollectionItem.style.borderColor = ""; // Revert border color of previously selected item
-      selectedCollectionItem.style.backgroundColor = ""; // Revert border color of previously selected item
-    }
-    item.style.borderColor = "#cc9752"; // Apply border color to the selected item
-    item.style.backgroundColor = "#cc9752"; // Apply background color to the selected item
-    selectedCollectionItem = item; // Update selected collection item
-  }
-
-  // Variable to store the currently opened content
-  var currentContent = null;
-
-  // Get all item summaries
-  var itemSummaries = document.querySelectorAll(".tur-collection-item");
-
-  // Add click event listener to each item summary
-  itemSummaries.forEach(function (summary) {
-    summary.addEventListener("click", function () {
-      // Check if the clicked item is already selected
-      if (this === currentContent) {
-        return; // Ignore the click event
-      }
-
-      // Get the data-item-id attribute value
-      var itemId = this.getAttribute("data-item-id");
-
-      // Find the corresponding item detail
-      var itemDetail = document.querySelector(
-        '.tur-content-reveal[data-content-id="' + itemId + '"]'
-      );
-
-      // Check if the item detail exists
-      if (itemDetail) {
-        // Check if there's currently opened content
-        if (currentContent) {
-          // Simulate click to hide the currently opened content
-          currentContent.click();
-        }
-
-        // Simulate click to reveal the new content
-        itemDetail.click();
-
-        // Update the currently opened content
-        currentContent = itemDetail;
-      }
-    });
-  });
-
-  // Add click event listeners to all showMapButton elements
-  var showMapButtons = document.querySelectorAll(".showmapbutton");
-  showMapButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      // Retrieve the data-kategori attribute value
-      var filterValue = this.getAttribute("data-kategori");
-
-      // Filter collection items and markers based on the data-kategori attribute value
-      filterCollectionItems(filterValue);
-      filterMarkers(filterValue);
-    });
-  });
-
-  // Function to filter collection items based on the data-tur-kat attribute value
-  function filterCollectionItems(filterValue) {
-    var collectionItems = document.querySelectorAll(".tur-collection-item");
-    collectionItems.forEach(function (item) {
-      var kategori = item.getAttribute("data-kategori");
-      if (kategori !== filterValue) {
-        item.style.display = "none"; // Hide items not matching the filter value
-      } else {
-        item.style.display = "block"; // Show items matching the filter value
-      }
-    });
-  }
-
-  function filterMarkers(filterValue) {
-    markers.forEach(function (marker) {
-      var kategori = marker.getElement().getAttribute("data-kategori");
-
-      if (kategori !== filterValue) {
-        console.log("Removing marker");
-        marker.remove(); // Remove markers not matching the filter value
-      } else {
-        console.log("Adding marker");
-        marker.addTo(map); // Add markers matching the filter value
-      }
-    });
-  }
-
-  // Function to get walking directions
-  function getWalkingDirections(origin, destination) {
-    var url =
-      "https://api.mapbox.com/directions/v5/mapbox/walking/" +
-      origin.longitude +
-      "," +
-      origin.latitude +
-      ";" +
-      destination.longitude +
-      "," +
-      destination.latitude +
-      "?geometries=geojson&access_token=" +
-      mapboxgl.accessToken;
-
-    fetch(url)
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (data) {
-        var route = data.routes[0];
-        if (route) {
-          var routeLine = route.geometry.coordinates;
-          var distance = route.distance;
-          var duration = route.duration;
-
-          // Draw the route on the map
-          map.addLayer({
-            id: "route",
-            type: "line",
-            source: {
-              type: "geojson",
-              data: {
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "LineString",
-                  coordinates: routeLine,
-                },
-              },
-            },
-            layout: {
-              "line-join": "round",
-              "line-cap": "round",
-            },
-            paint: {
-              "line-color": "#3887be",
-              "line-width": 5,
-              "line-opacity": 0.75,
-            },
-          });
-
-          // Fit the map to the route
-          var bounds = routeLine.reduce(function (bounds, coord) {
-            return bounds.extend(coord);
-          }, new mapboxgl.LngLatBounds(routeLine[0], routeLine[0]));
-          map.fitBounds(bounds, {
-            padding: 20,
-          });
-        }
-      })
-      .catch(function (error) {
-        console.error("Error fetching walking directions:", error);
-      });
   }
 });

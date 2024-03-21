@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     new mapboxgl.ScaleControl({
       maxWidth: 80,
       unit: "metric",
-    }),
+    })
   );
 
   // Add Geolocate Control to show user's location and center map when tapped
@@ -46,8 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
       // Trigger the Geolocate Control to start tracking the user's location
       geolocate.trigger();
     });
-
- 
 
   // Add event listener when map is fully loaded
   map.on("load", function () {
@@ -70,9 +68,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Check if latitude, longitude, and kategori are valid
     if (!isNaN(latitude) && !isNaN(longitude) && kategori) {
       var marker = new mapboxgl.Marker({
-          element: createCustomMarkerElement(unselectedMarkerIcon), // Create custom marker element
-          anchor: "bottom", // Anchor marker at the bottom
-        })
+        element: createCustomMarkerElement(unselectedMarkerIcon), // Create custom marker element
+        anchor: "bottom", // Anchor marker at the bottom
+      })
         .setLngLat([longitude, latitude])
         .addTo(map);
 
@@ -80,6 +78,28 @@ document.addEventListener("DOMContentLoaded", function () {
       marker.getElement().setAttribute("data-kategori", kategori);
 
       markers.push(marker);
+
+      // Create a popup for the marker
+      var popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+        '<h3>' +
+          item.textContent +
+          '</h3><button class="walking-directions-button">Click for walking directions</button>'
+      );
+
+      // Add click event listener to the marker
+      marker.setPopup(popup);
+
+      // Add event listener to the popup for walking directions
+      popup.on("open", function () {
+        var origin = geolocate._lastKnownPosition;
+        var destination = { longitude: longitude, latitude: latitude };
+        var walkingDirectionsButton = document.querySelector(
+          ".walking-directions-button"
+        );
+        walkingDirectionsButton.addEventListener("click", function () {
+          getWalkingDirections(origin, destination);
+        });
+      });
 
       // Add click event listener to each collection list item
       item.addEventListener("click", function () {
@@ -102,6 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Add click event listener to each marker
       marker.getElement().addEventListener("click", function () {
+        
         // Scroll to the selected collection item
         scrollToSelectedItem(item);
 

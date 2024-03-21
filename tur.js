@@ -225,18 +225,43 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Add click event listeners to all showMapButton elements
-  var showMapButtons = document.querySelectorAll(".showmapbutton");
-  showMapButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      // Retrieve the data-kategori attribute value
-      var filterValue = this.getAttribute("data-kategori");
-
-      // Filter collection items and markers based on the data-kategori attribute value
-      filterCollectionItems(filterValue);
-      filterMarkers(filterValue);
+// Function to fit the map view to the bounding box of the filtered markers
+function fitToBounds() {
+    // Get the coordinates of all the filtered markers
+    var filteredMarkersCoordinates = markers.filter(function (marker) {
+        return marker.getElement().style.display !== "none";
+    }).map(function (marker) {
+        return marker.getLngLat().toArray();
     });
-  });
+
+    // Create a LngLatBounds object with the coordinates of the filtered markers
+    var bounds = filteredMarkersCoordinates.reduce(function (bounds, coord) {
+        return bounds.extend(coord);
+    }, new mapboxgl.LngLatBounds(filteredMarkersCoordinates[0], filteredMarkersCoordinates[0]));
+
+    // Fit the map to the bounding box
+    map.fitBounds(bounds, {
+        padding: 50, // Adjust padding as needed
+        linear: true, // Use linear animation for smooth transition
+        maxZoom: 16 // Optional: set a maximum zoom level
+    });
+}
+
+// Add click event listeners to all showMapButton elements
+var showMapButtons = document.querySelectorAll(".showmapbutton");
+showMapButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+        // Retrieve the data-kategori attribute value
+        var filterValue = this.getAttribute("data-kategori");
+
+        // Filter collection items and markers based on the data-kategori attribute value
+        filterCollectionItems(filterValue);
+        filterMarkers(filterValue);
+
+        // Fit the map view to the bounding box of the filtered markers
+        fitToBounds();
+    });
+});
 
   // Function to filter collection items based on the data-tur-kat attribute value
   function filterCollectionItems(filterValue) {

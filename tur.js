@@ -117,7 +117,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Apply the "Pop" interaction to the marker element
         this.classList.add("pop-interaction");
       });
-      });
     }
   });
 

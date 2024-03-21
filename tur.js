@@ -1,4 +1,3 @@
-<script>
 document.addEventListener("DOMContentLoaded", function () {
   // Mapbox access token
   mapboxgl.accessToken =
@@ -245,4 +244,3 @@ console.log("Created marker element:", markerElement);
     });
 }
 });
-</script>

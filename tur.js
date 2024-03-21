@@ -125,7 +125,15 @@ document.addEventListener("DOMContentLoaded", function () {
         .setHTML("<h3>Walk here</h3><p>Click for walking directions</p>");
 
       marker.setPopup(popup);
-
+// Add event listener to the popup for walking directions
+        popup.on('open', function () {
+            var origin = geolocate._lastKnownPosition;
+            var destination = { longitude: longitude, latitude: latitude };
+            var walkingDirectionsButton = document.querySelector('.walking-directions-button');
+            walkingDirectionsButton.addEventListener('click', function () {
+                getWalkingDirections(origin, destination);
+            });
+        });
       // Handle marker click event
       marker.getElement().addEventListener("click", function () {
         var destination = {
@@ -137,7 +145,6 @@ document.addEventListener("DOMContentLoaded", function () {
           longitude: userLocation.longitude
         };
 
-        getWalkingDirections(origin, destination);
       });
     }
   });
